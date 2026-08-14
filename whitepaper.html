@@ -137,13 +137,11 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <li class="lvl3"><a href="#4-4-yield-is-turnover-times-edge">4.4 Yield is turnover times edge</a></li>
 <li class="lvl3"><a href="#4-5-the-fee-schedule">4.5 The fee schedule</a></li>
 <li class="lvl2"><a href="#5-solvency">5. Solvency</a></li>
-<li class="lvl2"><a href="#6-relationship-to-prior-work">6. Relationship to prior work</a></li>
-<li class="lvl3"><a href="#6-1-head-to-head-the-incumbent-model-vs-the-pooled-house">6.1 Head-to-head: the incumbent model vs the pooled house</a></li>
-<li class="lvl2"><a href="#7-architecture-and-the-oracle">7. Architecture and the oracle</a></li>
+<li class="lvl2"><a href="#6-architecture-and-the-oracle">6. Architecture and the oracle</a></li>
 <li class="lvl4"><a href="#figure-4-system-components">Figure 4 — System components</a></li>
-<li class="lvl3"><a href="#7-1-participants">7.1 Participants</a></li>
-<li class="lvl3"><a href="#7-2-the-oracle-registry">7.2 The oracle registry</a></li>
-<li class="lvl3"><a href="#7-3-governance">7.3 Governance</a></li>
+<li class="lvl3"><a href="#6-1-participants">6.1 Participants</a></li>
+<li class="lvl3"><a href="#6-2-the-oracle-registry">6.2 The oracle registry</a></li>
+<li class="lvl3"><a href="#6-3-governance">6.3 Governance</a></li>
 <li class="lvl2"><a href="#appendix-a-reference-parameters">Appendix A: reference parameters</a></li>
 <li class="lvl2"><a href="#appendix-b-deferred-mechanisms">Appendix B: deferred mechanisms</a></li>
 <li class="lvl2"><a href="#appendix-c-notation">Appendix C: notation</a></li>
@@ -165,16 +163,15 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <tr><td>~7.5% house edge — ~7.0% to LPs, 0.25–1% to the protocol</td><td>§4</td></tr>
 <tr><td>Consignor nets ~89–94% of oracle value, paid the instant their card is drawn</td><td>§3</td></tr>
 <tr><td>Worst single draw ≈ 18.5% of pool NAV, recovered in ≈ 251 tickets</td><td>§5, S3</td></tr>
-<tr><td>Incumbent comparison: −5.4% realized across 923,587 draws, odds unpublished</td><td>§6</td></tr>
+<tr><td>Incumbent comparison: −5.4% realized across 923,587 draws, odds unpublished</td><td>§1</td></tr>
 </tbody>
 </table></div>
 <hr />
 <h2 id="1-introduction">1. Introduction<a class="anchor" href="#1-introduction" aria-label="Link to this section">#</a></h2>
 <p>Running the house — the side of the bet that wins on average — is the profitable side of any gacha game, and every platform so far reserves that seat for a company. The category sold <strong>over a billion dollars of packs in eighteen months</strong>; Collector Crypt alone booked <strong>$146.9M in Q1 2026, about 98% of it from gacha</strong>. The cards, the storage, and the settlement are all tokenized — the one position that reliably makes money is still closed.</p>
 <p>It stays closed because nobody outside the operator can verify the house's edge. RipIndex, an independent on-chain tracker, reverse-engineers what platforms don't publish: Collector Crypt realizes <strong>−5.4% for players across 923,587 draws</strong>, with machines ranging from <strong>−21.7% to +10.6%</strong>; GachaPull advertises <strong>+2.0%</strong> and delivers <strong>−5.1%</strong>; Courtyard delivers <strong>−17.9%</strong>. These are careful estimates of numbers every platform could simply have published — and none does.</p>
-<p>Folio Club makes the odds a property anyone can check instead of a claim to trust: <strong>92.5% ± 0.5%</strong> return-to-play on every table, a <strong>13% floor on every miss</strong>, frozen on-chain before the draw exists (§2). Nothing to reverse-engineer, nothing for the house to refuse — which is what makes it safe to pool outside money into a shared bankroll (§4). The one launch-time trust is the price oracle's single disclosed publisher (§7): this house can misjudge what a prize is worth; it cannot choose who wins.</p>
+<p>Folio Club makes the odds a property anyone can check instead of a claim to trust: <strong>92.5% ± 0.5%</strong> return-to-play on every table, a <strong>13% floor on every miss</strong>, frozen on-chain before the draw exists (§2). Nothing to reverse-engineer, nothing for the house to refuse — which is what makes it safe to pool outside money into a shared bankroll (§4). The one launch-time trust is the price oracle's single disclosed publisher (§6): this house can misjudge what a prize is worth; it cannot choose who wins.</p>
 <p>Three predecessors shaped the design. <strong>FWA</strong> proved a permissionless house works, but let depositors price their own collateral and paid yield in emissions. <strong>Collector Crypt</strong> proved the product at scale, but kept the house closed. <strong>OlympusDAO</strong> proved protocol-owned liquidity, but wrapped it in a reflexive token. Folio Club keeps the product, the open house, and the owned bankroll — with oracle prices instead of self-reported values, real profit instead of emissions, and odds on-chain instead of on a private server.</p>
-<p><em>Sources: all realized-edge figures and draw counts come from RipIndex, read at <a href="https://rip-index.com/">https://rip-index.com/</a> on 2026-08-06 (the site updates continuously, so treat these as a snapshot). RipIndex values each draw at the platform's own instant-buyback rate — the probability-weighted buyback value of the draw, divided by the pack price — not at market value, which is why its figures sit below the platforms' own advertised numbers. Collector Crypt's advertised return and Q1 2026 revenue are its own published figures; the randomness-commitment analysis is drawn from its open-source <code>cc-vrf</code> repository and live on-chain inspection. Full source list at the end of this document.</em></p>
 <hr />
 <h2 id="2-the-game">2. The game<a class="anchor" href="#2-the-game" aria-label="Link to this section">#</a></h2>
 <p>The core property, and the thing no competitor offers: <strong>the odds are calculated on-chain from live inventory and live prices, and locked into the ticket before the random draw happens.</strong></p>
@@ -196,18 +193,17 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
   participant GE as gacha_engine
   participant HV as house_vault
 
-  P->>GE: buy_ticket(c)
-  GE->>HV: engine_credit_ticket / engine_lock(ℓ)
-  Note right of HV: L increases only here.<br/>ℓ = worst-case cash outcome
-  GE->>GE: randomness request, seed = ticket account
+  P->>GE: buy ticket ($100)
+  GE->>HV: credit ticket + lock worst-case payout
+  Note right of HV: locked cash only<br/>increases here
+  GE->>GE: randomness requested<br/>(before any result exists)
 
-  GE->>GE: settle_ticket (first-in-first-out, later slot)
-  Note over GE: outcome = randomness mod<br/>frozen bucket table
+  GE->>GE: settle - strict first-in, first-out
+  Note over GE: outcome = randomness<br/>applied to frozen odds
 
-  P->>GE: claim (NFT / cash / refund)
-  GE->>HV: engine_pay_cash | engine_release_nft
-  GE->>HV: engine_unlock(ℓ)
-  Note right of HV: L decreases exactly once<br/>on every terminal path
+  P->>GE: claim - card, cash, or refund
+  GE->>HV: pay cash / release card, then unlock
+  Note right of HV: lock released exactly once<br/>per ticket
 </pre>
 <p><code>buy_ticket</code> locks in the odds snapshot, escrows <span class="math-inline">c</span>, reserves the ticket's worst-case cash payout <span class="math-inline">\ell = \max_i \text{cash}_i</span>, and submits a randomness request — all before any result exists. Settlement is strictly FIFO in a later slot.</p>
 <p>Randomness comes from a callback-style VRF (verifiable random function, cryptographically proven untampered); a provider such as ORAO is the planned source. If the callback never arrives, a permissionless timeout refunds the ticket. <strong>Worst case for the house is a delay, never a theft</strong> — no instruction lets the pool decline an unfavorable outcome, and no private backend sits anywhere in this path.</p>
@@ -245,12 +241,12 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
   classDef actor fill:#eef4ff,stroke:#4a72c4,stroke-width:2px,color:#123
   classDef state fill:#f3f0ff,stroke:#7a5cc4,stroke-width:2px,color:#123
 
-  CW(["Consignor"]):::actor -->|"list (oracle-priced)"| Q["Listing queue<br/>FIFO (listing time)"]:::state
-  Q -->|"crank fills slots<br/>(pure sort, no discretion)"| T["Draw table<br/>items locked"]:::state
-  T -->|"drawn, consignor paid P"| W(["Winner"]):::actor
-  T -.->|"table closes"| Q
+  CW(["Consignor"]):::actor -->|"list card<br/>(oracle-priced)"| Q["Listing queue<br/>first listed, first drawn"]:::state
+  Q -->|"crank fills<br/>table slots"| T["Live draw table<br/>cards locked"]:::state
+  T -->|"card drawn,<br/>consignor paid"| W(["Winner"]):::actor
+  T -.->|"table closes<br/>unsold"| Q
   W -->|keep| C(["Collection"]):::actor
-  W -->|"consign back<br/>(USDC or shares, §3.6)"| Q
+  W -->|"consign back<br/>(cash or shares)"| Q
 </pre>
 <h3 id="3-5-pay-in-shares-consign-your-way-into-the-house">3.5 Pay-in-shares: consign your way into the house<a class="anchor" href="#3-5-pay-in-shares-consign-your-way-into-the-house" aria-label="Link to this section">#</a></h3>
 <p>At listing, a consignor sets one flag: pay me in USDC on draw, or in HOUSE shares minted at that moment's NAV, using the same payout <span class="math-inline">P</span>. Shares minted this way go into the same withdrawal cooldown as any other LP. The mint happens on realized cash, not a guess, since <span class="math-inline">P</span> was already set by queue competition and confirmed by a real paying draw — how a consignor gradually converts from card supplier into shareholder, no reward token needed.</p>
@@ -270,21 +266,20 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
   classDef pool fill:#f3f0ff,stroke:#7a5cc4,stroke-width:2px,color:#123
   classDef actor fill:#eef4ff,stroke:#4a72c4,stroke-width:2px,color:#123
 
-  V["HOUSE VAULT<br/>value V, shares S, NAV ν = V/S"]:::pool
+  V["HOUSE VAULT<br/>holds USDC - shares priced at NAV"]:::pool
 
   LP(["LP"]):::actor
   PL(["Player"]):::actor
   CO(["Consignor"]):::actor
 
-  LP -->|"USDC d → ΔS = d·S/V shares"| V
-  V -->|"redeem ΔS·ν after cooldown τ"| LP
+  LP -->|"deposit USDC,<br/>mint shares at NAV"| V
+  V -->|"redeem at NAV<br/>after 7-day cooldown"| LP
 
-  PL -->|"ticket c"| V
-  V -->|"E[payout] = ρ·c<br/>keep / consign back / cash ≥ f·c"| PL
+  PL -->|"$100 ticket"| V
+  V -->|"92.5% average payout<br/>cards or cash, floor 13%"| PL
 
-  CO -.->|"card listed, oracle-priced: P = v̂(1−h)<br/>(held in escrow)"| V
-  V -->|"P on win"| CO
-  V -->|"card worth V_f to winner"| PL
+  CO -.->|"card listed at oracle price<br/>(held in escrow)"| V
+  V -->|"paid the moment<br/>the card is drawn"| CO
 </pre>
 <p>Two mechanisms fund shareholder yield, both paid for out of money players and consignors actually spend:</p>
 <div class="math-display">\underbrace{(1 - \rho)\, c}_{\text{house edge per ticket}} \;+\; \underbrace{(V_f - P)}_{\text{consignment discount}} \;\longrightarrow\; \nu \uparrow</div>
@@ -329,48 +324,11 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <p><strong>S5 — The solver refuses cleanly.</strong> If RTP target, refund floor, and bucket caps can't all be satisfied with current inventory, no table gets published.</p>
 <p><strong>S6 — Withdrawal discipline.</strong> The 7-day cooldown, plus withdrawals only drawing against <span class="math-inline">C - L</span>, prevents jackpot-timing exits.</p>
 <p><strong>S7 — Consignment isolation.</strong> Consigned cards are never added into pool value; cash owed against them is fully reserved. Shelf capacity only grows as LP capital does.</p>
-<p><strong>S8 — Mispricing is bounded and frozen in place.</strong> The oracle price is read once at listing time, the payout fixed by rule, and cards freeze into the table and ticket without ever being re-read at claim — no drift from claim timing or later price moves. A bad price could still skew odds for tables built after it lands; the confidence discount, staleness rule, admission threshold, and 600-second circuit breaker (§7) limit how far. Because the instant buyback is anchored to the frozen listing-time <span class="math-inline">P</span>, not a live re-read, a bad price costs a single draw instead of compounding into repeated LP losses.</p>
+<p><strong>S8 — Mispricing is bounded and frozen in place.</strong> The oracle price is read once at listing time, the payout fixed by rule, and cards freeze into the table and ticket without ever being re-read at claim — no drift from claim timing or later price moves. A bad price could still skew odds for tables built after it lands; the confidence discount, staleness rule, admission threshold, and 600-second circuit breaker (§6) limit how far. Because the instant buyback is anchored to the frozen listing-time <span class="math-inline">P</span>, not a live re-read, a bad price costs a single draw instead of compounding into repeated LP losses.</p>
 <p><strong>S9 — Bulk reservation on card-guaranteed tables (design direction, not genesis).</strong> If turned on (§2.1), each table would reserve enough bulk cards to cover every open ticket, and stop selling if inventory couldn't keep up — an inventory obligation, not a cash one.</p>
 <p>Solvency and yield are separate claims: the invariants above bound <em>insolvency</em> — stress-tested across a full range of scenarios, see <a href="VERIFICATION.md"><code>VERIFICATION.md</code></a> — but don't promise LP returns stay attractive through a downturn.</p>
 <hr />
-<h2 id="6-relationship-to-prior-work">6. Relationship to prior work<a class="anchor" href="#6-relationship-to-prior-work" aria-label="Link to this section">#</a></h2>
-<p>Every platform loses money for players once the cash-out haircut applies — the differences are how much, how consistent, and whether anyone outside the operator can check. RipIndex, read 2026-08-06:</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Platform</th><th>Realized cash-out edge</th><th>Draws tracked</th><th>Publishes odds?</th></tr></thead>
-<tbody>
-<tr><td>Collector Crypt</td><td><strong>−5.4%</strong> (−21.7% to +10.6% by machine)</td><td>923,587</td><td>no — reverse-engineered</td></tr>
-<tr><td>GachaPull</td><td><strong>−5.1%</strong> (vs. +2.0% published)</td><td>126,676</td><td>yes</td></tr>
-<tr><td>Monster</td><td>−5.1% to <strong>+3.3%</strong> by tier</td><td>~230,000</td><td>—</td></tr>
-<tr><td>Phygitals</td><td>−5.5% to −13.7% by pack</td><td>—</td><td>yes</td></tr>
-<tr><td>Courtyard</td><td><strong>−17.9%</strong></td><td>~41,000 (48 h)</td><td>yes</td></tr>
-<tr><td>Beezie</td><td>not measurable, no per-draw feed</td><td>0</td><td>—</td></tr>
-</tbody>
-</table></div>
-<p>Publishing odds by itself isn't the differentiator — three platforms already do it. Every number above is a reconstruction, inferred and averaged because the underlying numbers are private in the first place.</p>
-<p>On the same basis, Folio Club comes out to roughly <strong>−10% to −15%</strong>: the 13% floor at face value, cards marked at consign-back value (~90–91 cents on the dollar). Not the best-looking number, but three things set it apart: the exit price is set by the winner, not the house; it's computed on-chain, not inferred with sampling error; and the ±0.5% band holds on every table, with no spread for a bad machine to hide in. Folio Club is the only row here nobody has to estimate.</p>
-<p>Earlier projects that shaped this design are covered in §1.</p>
-<h3 id="6-1-head-to-head-the-incumbent-model-vs-the-pooled-house">6.1 Head-to-head: the incumbent model vs the pooled house<a class="anchor" href="#6-1-head-to-head-the-incumbent-model-vs-the-pooled-house" aria-label="Link to this section">#</a></h3>
-<div class="table-wrap"><table>
-<thead><tr><th></th><th>Collector Crypt</th><th>Folio Club</th></tr></thead>
-<tbody>
-<tr><td>The house</td><td>the company</td><td>anyone with USDC (shares at NAV)</td></tr>
-<tr><td>Who earns the edge</td><td>the company</td><td>LPs; consignors can opt in via pay-in-shares</td></tr>
-<tr><td>Inventory source</td><td>company warehouse</td><td>permissionless consignment queue</td></tr>
-<tr><td>Cash exit on a win</td><td>instant 85–90% buyback of <em>their</em> mark</td><td>instant ~90% against price paid to consignor, or consign back at <em>your</em> price</td></tr>
-<tr><td>Prize pricing</td><td>operator's own marks</td><td>third-party oracle, discounted, gated</td></tr>
-<tr><td>Where the odds live</td><td>a server, unpublished — RipIndex reverse-engineered them</td><td>on-chain, frozen before the draw exists</td></tr>
-<tr><td>Advertised vs realized</td><td>advertises +5–10%; RipIndex measures −5.4% across 923,587 draws</td><td>advertised = realized</td></tr>
-<tr><td>Spread across machines</td><td>−21.7% to +10.6%, undisclosed</td><td>±0.5% around 92.5%, same on every table</td></tr>
-<tr><td>House edge</td><td>undisclosed</td><td>7.5%, fixed, verifiable per ticket</td></tr>
-<tr><td>A miss pays</td><td>a bulk card at the operator's mark</td><td>≥13% cash at genesis; card-guaranteed a future option (§2.1)</td></tr>
-<tr><td>Ticket prices</td><td>fixed packs</td><td>standing price points — $100 tier at genesis</td></tr>
-<tr><td>Randomness</td><td>in-house, grindable</td><td>on-chain VRF, requested only after purchase</td></tr>
-<tr><td>Can the house decline an outcome</td><td>yes</td><td>no — worst case is a timeout refund</td></tr>
-</tbody>
-</table></div>
-<p>Competitor claims sourced from on-chain analysis and each platform's own documentation; see References.</p>
-<hr />
-<h2 id="7-architecture-and-the-oracle">7. Architecture and the oracle<a class="anchor" href="#7-architecture-and-the-oracle" aria-label="Link to this section">#</a></h2>
+<h2 id="6-architecture-and-the-oracle">6. Architecture and the oracle<a class="anchor" href="#6-architecture-and-the-oracle" aria-label="Link to this section">#</a></h2>
 <p>The protocol is three Anchor programs (Anchor is the standard Solana smart-contract framework). Splitting them is a security decision: money (vault) and game logic (engine) sit behind a narrow interface, and the price feed is a plug-in either program can read but neither can fake.</p>
 <h4 id="figure-4-system-components">Figure 4 — System components<a class="anchor" href="#figure-4-system-components" aria-label="Link to this section">#</a></h4>
 <pre class="mermaid">flowchart LR
@@ -392,7 +350,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
   CON -.->|lists inventory| GE
 </pre>
 <p><code>house_vault</code> only moves money when the call comes from the engine, checked on every request. The engine decides odds; only the vault holds money.</p>
-<h3 id="7-1-participants">7.1 Participants<a class="anchor" href="#7-1-participants" aria-label="Link to this section">#</a></h3>
+<h3 id="6-1-participants">6.1 Participants<a class="anchor" href="#6-1-participants" aria-label="Link to this section">#</a></h3>
 <div class="table-wrap"><table>
 <thead><tr><th>Participant</th><th>Supplies</th><th>Earns</th><th>Where</th></tr></thead>
 <tbody>
@@ -405,7 +363,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 </tbody>
 </table></div>
 <p>At genesis, one disclosed party wears every operator hat: custodian, publisher, crank runner, reference frontend. None is meant to stay exclusive — cranks are open to anyone, the publisher is a replaceable plug-in, the frontend competes with any other app on the same programs. Treasury-held escrow is the one real trust cost, with an on-chain exit path (§3.2); roles are combined because the protocol is new, not because the design requires it.</p>
-<h3 id="7-2-the-oracle-registry">7.2 The oracle registry<a class="anchor" href="#7-2-the-oracle-registry" aria-label="Link to this section">#</a></h3>
+<h3 id="6-2-the-oracle-registry">6.2 The oracle registry<a class="anchor" href="#6-2-the-oracle-registry" aria-label="Link to this section">#</a></h3>
 <p>Every card resolves to a price feed: price, confidence width, last-update time, governance-approved publisher. Programs read only through the registry — feeds can eventually be combined across publishers instead of trusting one.</p>
 <p>Three defenses limit damage from a bad price:</p>
 <ul>
@@ -414,7 +372,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <li><strong>Circuit breaker.</strong> A price jump past a threshold holds pending until a confirming update arrives 600 seconds later.</li>
 </ul>
 <p>Because the bankroll never holds a card whose value depends on the oracle (§5, S4), a bad price only affects one draw's payout — never a balance-sheet liability.</p>
-<h3 id="7-3-governance">7.3 Governance<a class="anchor" href="#7-3-governance" aria-label="Link to this section">#</a></h3>
+<h3 id="6-3-governance">6.3 Governance<a class="anchor" href="#6-3-governance" aria-label="Link to this section">#</a></h3>
 <p>Governance at genesis is a multisig. Every dial in Appendix A is a <strong>configurable genesis parameter with a stated bound</strong>, movable only inside a published, on-chain range. The planned successor is <strong>futarchy via MetaDAO</strong>: a governance token, sold once the protocol has real mainnet volume, claims the protocol-fee treasury (§4.5) and steers the bounded dials through prediction markets. The token never touches the yield loop — HOUSE shares keep the vault claim, the token only owns the fee treasury, bounded the same way. The Olympus lesson intact: the governance market prices the fee line, not the house.</p>
 <hr />
 <h2 id="appendix-a-reference-parameters">Appendix A: reference parameters<a class="anchor" href="#appendix-a-reference-parameters" aria-label="Link to this section">#</a></h2>
