@@ -115,7 +115,6 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
     <div class="toc-head">Contents</div>
     <ul>
 <li class="lvl2"><a href="#abstract">Abstract</a></li>
-<li class="lvl3"><a href="#the-numbers-that-matter">The numbers that matter</a></li>
 <li class="lvl2"><a href="#1-introduction">1. Introduction</a></li>
 <li class="lvl2"><a href="#2-the-game">2. The game</a></li>
 <li class="lvl3"><a href="#2-1-the-odds-solver">2.1 The odds solver</a></li>
@@ -154,18 +153,6 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <h2 id="abstract">Abstract<a class="anchor" href="#abstract" aria-label="Link to this section">#</a></h2>
 <p>You pay $100 for a ticket. Before you buy, you see the full odds — every card you could win, its probability, its value — frozen on-chain so they cannot change after you commit. Miss, and you still get at least $13 back. No one, including the operators, can see a result before the draw.</p>
 <p>Every card gacha shipped so far has a company running the house: private odds, private randomness, all of the profit. Folio Club replaces the company with a pool anyone can join — deposit USDC and earn the house's edge, or consign a card into escrow and get paid the moment a player draws it. Profits accrue to the value of a pool share; there is no reward token and no emissions.</p>
-<h3 id="the-numbers-that-matter">The numbers that matter<a class="anchor" href="#the-numbers-that-matter" aria-label="Link to this section">#</a></h3>
-<div class="table-wrap"><table>
-<thead><tr><th>Fact</th><th>Where</th></tr></thead>
-<tbody>
-<tr><td>$100 ticket, 92.5% ± 0.5% targeted RTP</td><td>§2</td></tr>
-<tr><td>13% cash floor guaranteed on every miss</td><td>§2</td></tr>
-<tr><td>~7.5% house edge — ~7.0% to LPs, 0.25–1% to the protocol</td><td>§4</td></tr>
-<tr><td>Consignor nets ~89–94% of oracle value, paid the instant their card is drawn</td><td>§3</td></tr>
-<tr><td>Worst single draw ≈ 18.5% of pool NAV, recovered in ≈ 251 tickets</td><td>§5, S3</td></tr>
-<tr><td>Incumbent comparison: −5.4% realized across 923,587 draws, odds unpublished</td><td>§1</td></tr>
-</tbody>
-</table></div>
 <hr />
 <h2 id="1-introduction">1. Introduction<a class="anchor" href="#1-introduction" aria-label="Link to this section">#</a></h2>
 <p>Running the house — the side of the bet that wins on average — is the profitable side of any gacha game, and every platform so far reserves that seat for a company. The category sold over a billion dollars of packs in eighteen months; Collector Crypt alone booked $146.9M in Q1 2026, about 98% of it from gacha. The cards, the storage, and the settlement are all tokenized — the one position that reliably makes money is still closed.</p>
@@ -174,7 +161,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <p>Three predecessors shaped the design. FWA proved a permissionless house works, but let depositors price their own collateral and paid yield in emissions. Collector Crypt proved the product at scale, but kept the house closed. OlympusDAO proved protocol-owned liquidity, but wrapped it in a reflexive token. Folio Club keeps the product, the open house, and the owned bankroll — with oracle prices instead of self-reported values, real profit instead of emissions, and odds on-chain instead of on a private server.</p>
 <hr />
 <h2 id="2-the-game">2. The game<a class="anchor" href="#2-the-game" aria-label="Link to this section">#</a></h2>
-<p>The core property, and the thing no competitor offers: the odds are calculated on-chain from live inventory and live prices, and locked into the ticket before the random draw happens.</p>
+<p>Odds are calculated on-chain from live inventory and live prices, and locked into the ticket before the random draw happens.</p>
 <h3 id="2-1-the-odds-solver">2.1 The odds solver<a class="anchor" href="#2-1-the-odds-solver" aria-label="Link to this section">#</a></h3>
 <p>Tickets are sold at standing price points — a ticket price <span class="math-inline">c</span> is a parameter, not a hardcoded pack size. Given <span class="math-inline">c</span>, the current available cards (already screened by an allowlist and a price-confidence check), and their current discounted prices <span class="math-inline">\hat v_j</span>, a permissionless crank builds a draw table: cards are sorted into value buckets relative to <span class="math-inline">c</span> (consolation, par, premium, jackpot), and the solver picks bucket probabilities <span class="math-inline">q</span> so that:</p>
 <div class="math-display">\left| \sum_i q_i v_i - \frac{\rho}{10^4}\, c \right| \le \varepsilon\, c, \qquad \sum_i q_i = 1,</div>
@@ -252,7 +239,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <p>At listing, a consignor sets one flag: pay me in USDC on draw, or in HOUSE shares minted at that moment's NAV, using the same payout <span class="math-inline">P</span>. Shares minted this way go into the same withdrawal cooldown as any other LP. The mint happens on realized cash, not a guess, since <span class="math-inline">P</span> was already set by queue competition and confirmed by a real paying draw — how a consignor gradually converts from card supplier into shareholder, no reward token needed.</p>
 <hr />
 <h2 id="4-the-house">4. The house<a class="anchor" href="#4-the-house" aria-label="Link to this section">#</a></h2>
-<p>The vault holds USDC, full stop. Its financial state is two numbers: cash on hand (<span class="math-inline">C</span>), and cash locked against open bets (<span class="math-inline">L</span>).</p>
+<p>The vault holds USDC. Its financial state is two numbers: cash on hand (<span class="math-inline">C</span>), and cash locked against open bets (<span class="math-inline">L</span>).</p>
 <h3 id="4-1-shares-and-nav">4.1 Shares and NAV<a class="anchor" href="#4-1-shares-and-nav" aria-label="Link to this section">#</a></h3>
 <p>When you deposit, you get shares priced at the pool's net asset value (NAV) — pool value divided by shares outstanding. A deposit of <span class="math-inline">d</span> USDC mints</p>
 <div class="math-display">\Delta S = \frac{d \cdot S}{V}</div>
@@ -292,7 +279,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <p>Gross annual return is roughly:</p>
 <div class="math-display">\text{APR} \approx e \cdot T,</div>
 <p>where <span class="math-inline">e \approx 7.0\%</span> is the per-ticket LP take at launch fee settings (§4.5), and <span class="math-inline">T</span> is annual NAV turnover in ticket sales. Ticket edge only — the consignment discount adds on top but is left out since it depends on unmeasured consignor competition.</p>
-<p>The bankroll earns on flow, not stock: 50% APR needs <span class="math-inline">T \approx 7\times</span> at any pool size. The real constraint is bootstrapping — size caps (§5, S3) mean a small pool can only offer small prizes, limiting the volume the formula depends on.</p>
+<p>The bankroll earns on flow, not stock: 50% APR needs <span class="math-inline">T \approx 7\times</span> at any pool size. The constraint is bootstrapping — size caps (§5, S3) mean a small pool can only offer small prizes, limiting the volume the formula depends on.</p>
 <p>Recovery from a jackpot. A payout worth <span class="math-inline">k</span> times the ticket price costs the pool <span class="math-inline">(k - \rho)c</span> more than budgeted, recovered at <span class="math-inline">e \cdot c</span> per ticket sold afterward:</p>
 <div class="math-display">N \approx \frac{k - \rho}{e}</div>
 <p>tickets — independent of ticket price or pool size. At the S3 ceiling (<span class="math-inline">k = 18.5</span>, <span class="math-inline">\rho = 92.5\%</span>, <span class="math-inline">e \approx 7.0\%</span>), that's roughly 251 tickets (~2.5× NAV in sales), a little over four months at <span class="math-inline">T \approx 7</span>. This is a <em>volume</em> problem, not a capital one — no rescue deposit needed.</p>
@@ -320,7 +307,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <div class="math-display">\sum_{\text{open tickets}} \ell_t \;\le\; L \;\le\; C.</div>
 <p>Cards can never back a cash promise. Instant buybacks are capped the same way, as a fraction of liquid USDC.</p>
 <p>S3 — Size caps modeled on the Kelly criterion. Total open exposure and the largest single ticket price are both capped as fractions of pool value. The ticket-price cap limits the ticket price, not the payout: a jackpot bucket at its 5% cap, spending the full 92.5% payout budget, pays 92.5% ÷ 5% = 18.5× the ticket price. At the reference cap (ticket ≤ 1% of NAV), a single draw can cost 18.5% of NAV — a deliberate tradeoff so even a small pool can offer a prize worth playing for (recovery: ~251 tickets, §4.4).</p>
-<p>S4 — Nothing on the balance sheet depends on an oracle price. The vault's reserves are USDC, full stop. Cards bought back from winners (§2.3) are the one exception, booked at zero value against a price the pool itself just paid — pure upside once re-listed. Payout math runs on the discounted price and rejects feeds with too much uncertainty, so an oracle mistake is charged to one draw's payout only.</p>
+<p>S4 — Nothing on the balance sheet depends on an oracle price. The vault's reserves are USDC. Cards bought back from winners (§2.3) are the one exception, booked at zero value against a price the pool itself just paid — pure upside once re-listed. Payout math runs on the discounted price and rejects feeds with too much uncertainty, so an oracle mistake is charged to one draw's payout only.</p>
 <p>S5 — The solver refuses cleanly. If RTP target, refund floor, and bucket caps can't all be satisfied with current inventory, no table gets published.</p>
 <p>S6 — Withdrawal discipline. The 7-day cooldown, plus withdrawals only drawing against <span class="math-inline">C - L</span>, prevents jackpot-timing exits.</p>
 <p>S7 — Consignment isolation. Consigned cards are never added into pool value; cash owed against them is fully reserved. Shelf capacity only grows as LP capital does.</p>
@@ -400,7 +387,7 @@ pre.mermaid svg { max-width: 100%; height: auto; display: block; margin: 0 auto;
 <h2 id="appendix-b-deferred-mechanisms">Appendix B: deferred mechanisms<a class="anchor" href="#appendix-b-deferred-mechanisms" aria-label="Link to this section">#</a></h2>
 <p>Specified in earlier drafts and companion documents; not part of the base protocol at genesis.</p>
 <p>Card-guaranteed tables. The consolation bucket could pay in cards instead of cash, so every draw returns a card. Genesis launches with cash floors only; this ships once bulk card inventory is deep enough. Mechanics: for a bulk floor value <span class="math-inline">b</span> (cheapest listable card, working assumption $20), a miss would deliver <span class="math-inline">n = \lfloor fc/b \rfloor</span> cards plus <span class="math-inline">fc - nb</span> cash — the same floor value, just paid differently. A table would only guarantee a card on tickets priced above roughly <span class="math-inline">b/f</span> (about $155 at $20 bulk cards and a 13% floor); below that, cash. Would pair with S9 (Appendix, §5): each such table would reserve enough bulk cards to cover every open ticket, and stop selling if inventory couldn't keep up.</p>
-<p>Bundles. An <span class="math-inline">N</span>-draw ticket at price <span class="math-inline">N \cdot c</span>, one randomness request, guaranteeing at least <span class="math-inline">K</span> of <span class="math-inline">N</span> outcomes are cards. Paid for inside the same RTP budget — the guarantee doesn't come free, it leans the jackpot bucket down and the guaranteed slots toward bulk cards. The honest version of the industry's "pity" mechanic: a published, provable constraint instead of a server-side counter you can't inspect.</p>
+<p>Bundles. An <span class="math-inline">N</span>-draw ticket at price <span class="math-inline">N \cdot c</span>, one randomness request, guaranteeing at least <span class="math-inline">K</span> of <span class="math-inline">N</span> outcomes are cards. Paid for inside the same RTP budget — the guarantee doesn't come free, it leans the jackpot bucket down and the guaranteed slots toward bulk cards. Unlike the industry's server-side "pity" counters, the guarantee is a published constraint anyone can verify.</p>
 <p>Volatility flavors. Two tables per price point, same price and RTP target, different shape via the floor dial: Standard (25–30% floor, tightened jackpot) vs. Degen (13% floor, maximum jackpot). No new solver logic — just different bucket-cap settings — but each flavor is its own live table (~12 cards), so genesis ships one table per price point.</p>
 <p>Advance on listing. Because listings sit in escrow, the pool could advance a consignor up to 70% of their payout <span class="math-inline">P</span> at listing time rather than on draw — structurally a secured loan at ~1.5× coverage, repaid from the draw payout or in full to delist. Total advances would be capped as a fraction of liquid USDC so they never compete with cash locked against open tickets. Buys timing, not more shelf capacity.</p>
 <p>Direct card deposits into the bankroll — removed from v1 scope entirely. Earlier plans included oracle pricing, haircut-credited share minting, and a regime-scaled cap ladder; consignment ships without any of that. Consign-then-pay-in-shares (§3.5) is the only path into card equity at launch.</p>
